@@ -33,10 +33,6 @@ interface QueryParams {
   [key: string]: string;
 }
 
-interface WindowWithOAuth extends Window {
-  onCompleteOauth?: (query: string, onComplete: () => void) => void;
-}
-
 function showOAuthWindow(
   url: string,
   payload: StartOAuthParams,
@@ -44,8 +40,7 @@ function showOAuthWindow(
   ajaxOptions?: Record<string, unknown>
 ): Promise<QueryParams> {
   return new Promise((resolve, reject) => {
-    const selfWindow = window as WindowWithOAuth;
-    const newWindow = window.open(url);
+    const newWindow = window.open(url, '_blank', 'noopener');
 
     if (
       !newWindow ||
@@ -90,23 +85,24 @@ function showOAuthWindow(
         pollAction();
       }, 5000);
     } else {
-      selfWindow.onCompleteOauth = function (
-        query: string,
-        onComplete: () => void
-      ) {
-        delete selfWindow.onCompleteOauth;
+      const channel = new BroadcastChannel('sonarr_oauth');
 
+      channel.onmessage = (event: MessageEvent<string>) => {
+        channel.close();
+
+        const query = event.data;
         const queryParams: Record<string, string> = {};
         const splitQuery = query.substring(1).split('&');
 
         splitQuery.forEach((param) => {
           if (param) {
             const paramSplit = param.split('=');
-            queryParams[paramSplit[0]] = paramSplit[1];
+            queryParams[decodeURIComponent(paramSplit[0])] = decodeURIComponent(
+              paramSplit[1]
+            );
           }
         });
 
-        onComplete();
         resolve(queryParams);
       };
     }
