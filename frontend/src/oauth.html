@@ -5,10 +5,13 @@
     <title>OAuth landing page</title>
     <script>
       <!--
-      var channel = new BroadcastChannel('sonarr_oauth');
-      channel.postMessage(window.location.search);
-      channel.close();
-      window.close();
+      if (window.opener && window.opener.onCompleteOauth) {
+        window.opener.onCompleteOauth(window.location.search, function () {
+          window.close();
+        });
+      } else {
+        window.close();
+      }
       -->
     </script>
   </head>
