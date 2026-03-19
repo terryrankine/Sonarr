@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -26,14 +27,14 @@ namespace NzbDrone.Core.Configuration
         private readonly IConfigRepository _repository;
         private readonly IEventAggregator _eventAggregator;
         private readonly Logger _logger;
-        private static Dictionary<string, string> _cache;
+        private static ConcurrentDictionary<string, string> _cache;
 
         public ConfigService(IConfigRepository repository, IEventAggregator eventAggregator, Logger logger)
         {
             _repository = repository;
             _eventAggregator = eventAggregator;
             _logger = logger;
-            _cache = new Dictionary<string, string>();
+            _cache = new ConcurrentDictionary<string, string>();
         }
 
         private Dictionary<string, object> AllWithDefaults()
@@ -505,22 +506,20 @@ namespace NzbDrone.Core.Configuration
 
         private void EnsureCache()
         {
-            lock (_cache)
+            if (!_cache.Any())
             {
-                if (!_cache.Any())
+                var all = _repository.All();
+
+                foreach (var item in all)
                 {
-                    var all = _repository.All();
-                    _cache = all.ToDictionary(c => c.Key.ToLower(), c => c.Value);
+                    _cache.TryAdd(item.Key.ToLower(), item.Value);
                 }
             }
         }
 
         private static void ClearCache()
         {
-            lock (_cache)
-            {
-                _cache = new Dictionary<string, string>();
-            }
+            _cache.Clear();
         }
     }
 }
