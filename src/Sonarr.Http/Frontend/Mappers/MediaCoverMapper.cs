@@ -29,6 +29,14 @@ namespace Sonarr.Http.Frontend.Mappers
 
             var resourcePath = Path.Combine(_appFolderInfo.GetAppDataPath(), path);
 
+            var fullPath = Path.GetFullPath(resourcePath);
+            var appDataPath = Path.GetFullPath(_appFolderInfo.GetAppDataPath());
+
+            if (!fullPath.StartsWith(appDataPath, StringComparison.OrdinalIgnoreCase))
+            {
+                return null;
+            }
+
             if (!_diskProvider.FileExists(resourcePath) || _diskProvider.GetFileSize(resourcePath) == 0)
             {
                 var baseResourcePath = RegexResizedImage.Replace(resourcePath, ".jpg$1");
