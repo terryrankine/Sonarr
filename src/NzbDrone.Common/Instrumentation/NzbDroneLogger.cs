@@ -114,7 +114,7 @@ namespace NzbDrone.Common.Instrumentation
         {
             var target = new DebuggerTarget();
             target.Name = "debuggerLogger";
-            target.Layout = new CleansingConsoleLogLayout("[${level}] [${threadid}] ${logger}: ${message} ${onexception:inner=${newline}${newline}[v${assembly-version}] ${exception:format=ToString}${newline}}");
+            target.Layout = "[${level}] [${threadid}] ${logger}: ${message} ${onexception:inner=${newline}${newline}[v${assembly-version}] ${exception:format=ToString}${newline}}";
 
             var loggingRule = new LoggingRule("*", LogLevel.Trace, target);
             LogManager.Configuration.AddTarget("debugger", target);
@@ -173,7 +173,7 @@ namespace NzbDrone.Common.Instrumentation
 
         private static void RegisterUpdateFile(IAppFolderInfo appFolderInfo)
         {
-            var fileTarget = new CleansingFileTarget();
+            var fileTarget = new FileTarget();
 
             fileTarget.Name = "updateFileLogger";
             fileTarget.FileName = Path.Combine(appFolderInfo.GetUpdateLogFolder(), DateTime.Now.ToString("yyyy.MM.dd-HH.mm") + ".txt");

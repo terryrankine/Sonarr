@@ -1,6 +1,7 @@
 using System.Text;
 using NLog;
 using NLog.Layouts;
+using NzbDrone.Common.EnvironmentInfo;
 
 namespace NzbDrone.Common.Instrumentation;
 
@@ -11,8 +12,11 @@ public class CleansingConsoleLogLayout(string format)
     {
         base.RenderFormattedMessage(logEvent, target);
 
-        var result = CleanseLogMessage.Cleanse(target.ToString());
-        target.Clear();
-        target.Append(result);
+        if (RuntimeInfo.IsProduction)
+        {
+            var result = CleanseLogMessage.Cleanse(target.ToString());
+            target.Clear();
+            target.Append(result);
+        }
     }
 }
