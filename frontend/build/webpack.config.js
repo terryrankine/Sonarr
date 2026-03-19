@@ -24,7 +24,7 @@ module.exports = (env) => {
 
   const config = {
     mode: isProduction ? 'production' : 'development',
-    devtool: isProduction ? false : 'eval-source-map',
+    devtool: isProduction ? 'source-map' : 'eval-source-map',
     target: 'web',
 
     stats: {
