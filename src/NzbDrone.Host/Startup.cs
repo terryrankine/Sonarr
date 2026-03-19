@@ -82,7 +82,7 @@ namespace NzbDrone.Host
                 options.AddPolicy(VersionedApiControllerAttribute.API_CORS_POLICY,
                     builder =>
                     builder.AllowAnyOrigin()
-                    .WithMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
+                    .AllowAnyMethod()
                     .AllowAnyHeader());
 
                 options.AddPolicy("AllowGet",
