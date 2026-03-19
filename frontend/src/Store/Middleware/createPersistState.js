@@ -1,5 +1,4 @@
 import _ from 'lodash';
-import persistState from 'redux-localstorage';
 import actions from 'Store/Actions';
 import migrate from 'Store/Migrators/migrate';
 
@@ -64,16 +63,14 @@ function mergeColumns(path, initialState, persistedState, computedState) {
   _.set(computedState, path, columns);
 }
 
-function slicer(paths_) {
-  return (state) => {
-    const subset = {};
+function sliceState(state) {
+  const subset = {};
 
-    paths_.forEach((path) => {
-      _.set(subset, path, _.get(state, path));
-    });
+  paths.forEach((path) => {
+    _.set(subset, path, _.get(state, path));
+  });
 
-    return subset;
-  };
+  return subset;
 }
 
 function serialize(obj) {
@@ -97,25 +94,39 @@ function merge(initialState, persistedState) {
 }
 
 const KEY = 'sonarr';
+const storageKey = window.Sonarr.instanceName.toLowerCase().replace(/ /g, '_') || KEY;
 
-const config = {
-  slicer,
-  serialize,
-  merge,
-  key: window.Sonarr.instanceName.toLowerCase().replace(/ /g, '_') || KEY
-};
+// Store enhancer that persists selected state paths to localStorage.
+// Replaces the unmaintained redux-localstorage package with identical behavior.
+function persistState(createStore) {
+  return (reducer, initialState, enhancer) => {
+    const persistedState = JSON.parse(localStorage.getItem(storageKey));
+    const finalInitialState = merge(initialState, persistedState);
+
+    const store = createStore(reducer, finalInitialState, enhancer);
+
+    store.subscribe(() => {
+      const state = store.getState();
+      const subset = sliceState(state);
+
+      localStorage.setItem(storageKey, serialize(subset));
+    });
+
+    return store;
+  };
+}
 
 export default function createPersistState() {
   // Migrate existing local storage value to new key if it does not already exist.
   // Leave old value as-is in case there are multiple instances using the same key.
-  if (config.key !== KEY && localStorage.getItem(KEY) && !localStorage.getItem(config.key)) {
-    localStorage.setItem(config.key, localStorage.getItem(KEY));
+  if (storageKey !== KEY && localStorage.getItem(KEY) && !localStorage.getItem(storageKey)) {
+    localStorage.setItem(storageKey, localStorage.getItem(KEY));
   }
 
   // Migrate existing local storage before proceeding
-  const persistedState = JSON.parse(localStorage.getItem(config.key));
-  migrate(persistedState);
-  localStorage.setItem(config.key, serialize(persistedState));
+  const existingState = JSON.parse(localStorage.getItem(storageKey));
+  migrate(existingState);
+  localStorage.setItem(storageKey, serialize(existingState));
 
-  return persistState(paths, config);
+  return persistState;
 }
